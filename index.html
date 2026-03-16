@@ -163,14 +163,23 @@
     <div id="formContainer" class="hidden opacity-0 transition-all duration-500 mt-8 pt-8 border-t border-gray-100">
       
       <!-- Kartu identitas anggota -->
-      <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-2xl p-5 mb-8 flex flex-col sm:flex-row items-center sm:items-start gap-4 text-center sm:text-left">
+      <div id="identityCard" class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-2xl p-5 mb-4 flex flex-col sm:flex-row items-center sm:items-start gap-4 text-center sm:text-left">
         <div class="w-14 h-14 bg-[#0f2167] rounded-2xl flex items-center justify-center text-white text-2xl font-black shrink-0">
           <span>👤</span>
         </div>
         <div>
-          <p class="text-xs text-blue-500 uppercase tracking-widest font-bold mb-1">Anggota Terverifikasi ✓</p>
+          <p id="verifyBadgeText" class="text-xs text-blue-500 uppercase tracking-widest font-bold mb-1">Anggota Terverifikasi ✓</p>
           <h3 class="text-xl font-black text-[#0f2167]" id="greetNama">-</h3>
           <p class="text-sm text-gray-500 font-medium mt-0.5" id="greetDetail">-</p>
+        </div>
+      </div>
+
+      <!-- Banner revisi — hanya tampil di mode revisi -->
+      <div id="revisionBanner" class="hidden bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-6 flex items-start gap-3">
+        <span class="text-2xl shrink-0">✏️</span>
+        <div>
+          <p class="font-black text-amber-800 text-sm">Mode Revisi Aktif</p>
+          <p class="text-amber-700 text-xs mt-1 leading-relaxed">Form sudah diisi dengan data konfirmasi Anda sebelumnya. Ubah pilihan yang ingin direvisi, lalu klik <strong>Simpan Revisi</strong>.</p>
         </div>
       </div>
 
@@ -288,12 +297,18 @@
       </form>
     </div>
 
-    <!-- ── Pesan Sukses ── -->
+    <!-- ── Pesan Sukses — mode baru ── -->
     <div id="successMessage" class="hidden mt-8 bg-emerald-600 text-white p-8 sm:p-10 rounded-2xl text-center">
-      <div class="text-7xl mb-4">🎉</div>
-      <p class="text-3xl font-black mb-2">Terima Kasih!</p>
-      <p class="text-xl font-bold text-emerald-100 mb-1">Konfirmasi <span id="successName" class="underline decoration-emerald-300 decoration-2">-</span> Berhasil Disimpan</p>
-      <p class="text-sm font-normal text-emerald-200 mt-2 mb-8 leading-relaxed">Data Anda telah tercatat secara aman di database KOPKAR Adaro Karya Mandiri.<br>Kami menantikan kehadiran Anda pada RAT ke-30.</p>
+      <div class="text-7xl mb-4" id="successEmoji">🎉</div>
+      <p class="text-3xl font-black mb-2" id="successTitle">Terima Kasih!</p>
+      <p class="text-xl font-bold text-emerald-100 mb-1">
+        <span id="successAction">Konfirmasi</span> 
+        <span id="successName" class="underline decoration-emerald-300 decoration-2">-</span> 
+        <span id="successVerb">Berhasil Disimpan</span>
+      </p>
+      <p class="text-sm font-normal text-emerald-200 mt-2 mb-8 leading-relaxed" id="successDesc">
+        Data Anda telah tercatat secara aman di database KOPKAR Adaro Karya Mandiri.<br>Kami menantikan kehadiran Anda pada RAT ke-30.
+      </p>
       <button type="button" onclick="resetForm()" class="bg-white text-emerald-700 px-8 py-3 rounded-2xl hover:bg-emerald-50 font-black transition-colors shadow-md">
         Tutup & Selesai
       </button>
@@ -426,13 +441,13 @@
             <div class="p-4 flex justify-between items-center hover:bg-emerald-50 transition-colors">
               <div class="flex items-center gap-3">
                 <span class="bg-emerald-500 text-white w-7 h-7 rounded-full flex items-center justify-center text-xs font-black shrink-0">3</span>
-                <span class="font-bold text-gray-800 text-sm">Penyerahan SHU tahun Buku 2025</span>
+                <span class="font-bold text-gray-800 text-sm">Penyerahan dan distribusi SHU</span>
               </div>
               <span class="toggle-icon text-gray-400 text-sm select-none">▼</span>
             </div>
             <div class="agenda-content">
               <div class="px-4 pb-4 pt-2 text-sm text-gray-600 border-t border-gray-100 leading-relaxed">
-                Persetujuan distribusi Sisa Hasil Usaha kepada seluruh anggota kopkar AKM All site.
+                Persetujuan distribusi Sisa Hasil Usaha kepada seluruh anggota di site adaro.
               </div>
             </div>
           </div>
@@ -548,12 +563,13 @@
 // ─────────────────────────────────────────────
 // KONFIGURASI — Ganti URL jika Apps Script berubah
 // ─────────────────────────────────────────────
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwBUtpo3Bs1mFLrfefYzyS87d1mCtlalBwWhuy6VC3SBqDAXWg60H-FjyKwE12a9Q8e/exec';
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbydt5ZrJ9iGdP1sS4rY3EKc4CzIJWAOBUzaDckHdgZ8jGAUkf8xgYXr7KhNlyfOtvTo/exec';
 
 const TOTAL_MEMBERS  = 414;
 const QUORUM_TARGET  = 208; // >50% dari 414 anggota
 
 let activeMemberData = {};
+let isRevisionMode   = false;
 let quorumChart, hybridChart;
 
 // ─────────────────────────────────────────────
@@ -646,13 +662,11 @@ function verifikasiAnggota() {
   const loader   = document.getElementById('verifikasiLoader');
   const btn      = document.getElementById('btnVerifikasi');
 
-  // Validasi input kosong
   if (!inputId) {
     showMsg(msgEl, '⚠️ Harap masukkan Nomor Karyawan Anda terlebih dahulu.', 'red');
     return;
   }
 
-  // Loading state
   setLoading(btnText, btnIcon, loader, btn, true);
   msgEl.classList.add('hidden');
 
@@ -661,7 +675,7 @@ function verifikasiAnggota() {
     .then(data => {
       setLoading(btnText, btnIcon, loader, btn, false);
 
-      if (data.status === 'found') {
+      if (data.status === 'found' || data.status === 'duplicate') {
         // Simpan data anggota aktif
         activeMemberData = {
           id:    inputId,
@@ -670,23 +684,46 @@ function verifikasiAnggota() {
           email: data.email || '-'
         };
 
-        // Tampilkan form
+        // Deteksi mode revisi
+        isRevisionMode = (data.status === 'duplicate');
+
+        // Isi header kartu identitas
         document.getElementById('greetNama').textContent   = activeMemberData.nama;
         document.getElementById('greetDetail').textContent = `Site: ${activeMemberData.site} | No. Anggota: ${activeMemberData.id}`;
+
+        if (isRevisionMode) {
+          // Tampilkan banner revisi & ubah badge
+          document.getElementById('revisionBanner').classList.remove('hidden');
+          document.getElementById('verifyBadgeText').textContent  = '✏️ Mode Revisi — Data Sebelumnya Dimuat';
+          document.getElementById('verifyBadgeText').className    = 'text-xs text-amber-600 uppercase tracking-widest font-bold mb-1';
+          document.getElementById('identityCard').className       = document.getElementById('identityCard').className
+            .replace('from-blue-50 to-indigo-50 border-blue-100', 'from-amber-50 to-yellow-50 border-amber-200');
+
+          // Ubah tombol submit jadi amber (revisi)
+          const sbBtn = document.getElementById('submitBtn');
+          sbBtn.className = sbBtn.className
+            .replace('bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20', 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/20');
+          document.getElementById('submitText').textContent = 'Simpan Revisi';
+          document.getElementById('submitIcon').textContent = '✎';
+
+          // Pre-fill form dengan data lama jika tersedia
+          if (data.existingRsvp) {
+            prefillForm(data.existingRsvp);
+          }
+        }
+
+        // Tampilkan form
         formCont.classList.remove('hidden');
         setTimeout(() => formCont.classList.remove('opacity-0'), 50);
 
-        // Kunci input & sembunyikan tombol
+        // Kunci input & sembunyikan tombol verifikasi
         const inp = document.getElementById('cekNoAnggota');
         inp.disabled = true;
         inp.classList.add('bg-gray-100', 'text-gray-400', 'border-gray-100', 'cursor-not-allowed');
         btn.classList.add('hidden');
 
-        // Scroll ke form
         formCont.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-      } else if (data.status === 'duplicate') {
-        showMsg(msgEl, '⚠️ Nomor ini sudah melakukan konfirmasi sebelumnya.', 'orange');
       } else {
         showMsg(msgEl, '❌ Nomor tidak terdaftar di database Koperasi.', 'red');
       }
@@ -733,6 +770,26 @@ function toggleSHU() {
 }
 
 // ─────────────────────────────────────────────
+// PRE-FILL FORM (mode revisi)
+// ─────────────────────────────────────────────
+function prefillForm(rsvp) {
+  // Pre-fill radio kehadiran
+  if (rsvp.kehadiran) {
+    const radioK = document.querySelector(`input[name="kehadiran"][value="${rsvp.kehadiran}"]`);
+    if (radioK) { radioK.checked = true; toggleKuasa(); }
+  }
+  // Pre-fill radio SHU
+  if (rsvp.shu) {
+    const radioS = document.querySelector(`input[name="shu"][value="${rsvp.shu}"]`);
+    if (radioS) { radioS.checked = true; toggleSHU(); }
+  }
+  // Pre-fill rekening jika ada
+  if (rsvp.bank)     document.getElementById('inputBank').value     = rsvp.bank     !== '-' ? rsvp.bank     : '';
+  if (rsvp.rekening) document.getElementById('inputRekening').value = rsvp.rekening !== '-' ? rsvp.rekening : '';
+}
+
+
+// ─────────────────────────────────────────────
 // SUBMIT RSVP
 // ─────────────────────────────────────────────
 function submitRSVP(event) {
@@ -743,21 +800,20 @@ function submitRSVP(event) {
   const sbLoad = document.getElementById('submitLoader');
   const sbBtn  = document.getElementById('submitBtn');
 
-  // Loading state
   sbText.classList.add('hidden');
   sbIcon.classList.add('hidden');
   sbLoad.classList.remove('hidden');
   sbBtn.disabled = true;
 
   const payload = {
-    action:    'insert',
+    action:    isRevisionMode ? 'update' : 'insert',
     id:        activeMemberData.id,
     nama:      activeMemberData.nama,
     site:      activeMemberData.site,
     email:     activeMemberData.email,
     kehadiran: getRadio('kehadiran'),
     shu:       getRadio('shu'),
-    bank:      document.getElementById('inputBank').value    || '-',
+    bank:      document.getElementById('inputBank').value     || '-',
     rekening:  document.getElementById('inputRekening').value || '-'
   };
 
@@ -768,16 +824,24 @@ function submitRSVP(event) {
   })
   .then(r => r.json())
   .then(() => {
-    // Tampilkan sukses
     document.getElementById('formContainer').classList.add('hidden');
     document.getElementById('verifikasiArea').classList.add('hidden');
 
     const sucEl = document.getElementById('successMessage');
-    sucEl.classList.remove('hidden');
+    if (isRevisionMode) {
+      sucEl.classList.remove('bg-emerald-600');
+      sucEl.classList.add('bg-amber-500');
+      document.getElementById('successEmoji').textContent  = '✅';
+      document.getElementById('successTitle').textContent  = 'Revisi Berhasil!';
+      document.getElementById('successAction').textContent = 'Data';
+      document.getElementById('successVerb').textContent   = 'Berhasil Diperbarui';
+      document.getElementById('successDesc').innerHTML     = 'Konfirmasi kehadiran Anda telah diperbarui di database KOPKAR.<br>Terima kasih telah memperbarui data Anda.';
+      document.querySelector('#successMessage button').classList.replace('text-emerald-700', 'text-amber-700');
+    }
     document.getElementById('successName').textContent = payload.nama;
+    sucEl.classList.remove('hidden');
     sucEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-    // Refresh dashboard
     fetchDashboardData();
   })
   .catch(() => {
@@ -788,7 +852,6 @@ function submitRSVP(event) {
     sbBtn.disabled = false;
   });
 }
-
 // ─────────────────────────────────────────────
 // FETCH DASHBOARD DATA
 // ─────────────────────────────────────────────
@@ -840,6 +903,7 @@ function fetchDashboardData() {
 // ─────────────────────────────────────────────
 function resetForm() {
   activeMemberData = {};
+  isRevisionMode   = false;
   document.getElementById('rsvpForm').reset();
 
   const inp = document.getElementById('cekNoAnggota');
@@ -850,21 +914,43 @@ function resetForm() {
   document.getElementById('verifikasiArea').classList.remove('hidden');
   document.getElementById('btnVerifikasi').classList.remove('hidden');
   document.getElementById('msgVerifikasi').classList.add('hidden');
-  document.getElementById('successMessage').classList.add('hidden');
+  document.getElementById('revisionBanner').classList.add('hidden');
+
+  // Reset kartu identitas ke state awal
+  document.getElementById('verifyBadgeText').textContent = 'Anggota Terverifikasi ✓';
+  document.getElementById('verifyBadgeText').className   = 'text-xs text-blue-500 uppercase tracking-widest font-bold mb-1';
+  const card = document.getElementById('identityCard');
+  card.className = card.className
+    .replace('from-amber-50 to-yellow-50 border-amber-200', 'from-blue-50 to-indigo-50 border-blue-100');
+
+  // Reset tombol submit ke state awal (hijau)
+  const sbBtn = document.getElementById('submitBtn');
+  sbBtn.className = sbBtn.className
+    .replace('bg-amber-500 hover:bg-amber-600 shadow-amber-500/20', 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20');
+  document.getElementById('submitText').textContent = 'Simpan Konfirmasi Saya';
+  document.getElementById('submitIcon').textContent = '✓';
+  document.getElementById('submitText').classList.remove('hidden');
+  document.getElementById('submitIcon').classList.remove('hidden');
+  document.getElementById('submitLoader').classList.add('hidden');
+  sbBtn.disabled = false;
+
+  // Reset success message ke state awal (hijau)
+  const sucEl = document.getElementById('successMessage');
+  sucEl.classList.add('hidden');
+  sucEl.classList.remove('bg-amber-500');
+  sucEl.classList.add('bg-emerald-600');
+  document.getElementById('successEmoji').textContent  = '🎉';
+  document.getElementById('successTitle').textContent  = 'Terima Kasih!';
+  document.getElementById('successAction').textContent = 'Konfirmasi';
+  document.getElementById('successVerb').textContent   = 'Berhasil Disimpan';
+  document.getElementById('successDesc').innerHTML     = 'Data Anda telah tercatat secara aman di database KOPKAR Adaro Karya Mandiri.<br>Kami menantikan kehadiran Anda pada RAT ke-30.';
 
   const formCont = document.getElementById('formContainer');
   formCont.classList.add('opacity-0');
   setTimeout(() => formCont.classList.add('hidden'), 400);
 
-  // Reset tombol submit
-  document.getElementById('submitText').classList.remove('hidden');
-  document.getElementById('submitIcon').classList.remove('hidden');
-  document.getElementById('submitLoader').classList.add('hidden');
-  document.getElementById('submitBtn').disabled = false;
-
   toggleKuasa();
   toggleSHU();
-
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
