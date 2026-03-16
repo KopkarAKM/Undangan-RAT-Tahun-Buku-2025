@@ -361,7 +361,7 @@
   // ---------------------------------------------------------
   // MASUKKAN URL GOOGLE APPS SCRIPT ANDA DI SINI
   // ---------------------------------------------------------
-  const GOOGLE_SCRIPT_URL = 'ISI_URL_WEB_APP_GOOGLE_APPS_SCRIPT_DISINI';
+  const GOOGLE_SCRIPT_URL ='https://script.google.com/macros/s/AKfycbzzdVO-Ys5wIE1JkjujKyXOUh6Rs0eOnhTsrFJKDa6_y0VZcU7l2DjXdOv63LxjRsa7/exec';
 
   const totalMembers = 500; 
   const quorumTarget = 251; 
@@ -405,7 +405,7 @@
   }
 
   function verifikasiAnggota() {
-    if (GOOGLE_SCRIPT_URL === 'ISI_URL_WEB_APP_GOOGLE_APPS_SCRIPT_DISINI') {
+    if (GOOGLE_SCRIPT_URL === 'https://script.google.com/macros/s/AKfycbzzdVO-Ys5wIE1JkjujKyXOUh6Rs0eOnhTsrFJKDa6_y0VZcU7l2DjXdOv63LxjRsa7/exec') {
         alert("PENTING: Masukkan URL Google Apps Script Anda di dalam file HTML.");
         return;
     }
@@ -502,7 +502,7 @@
 
   function submitRSVP(event) {
     event.preventDefault();
-    if (GOOGLE_SCRIPT_URL === 'ISI_URL_WEB_APP_GOOGLE_APPS_SCRIPT_DISINI') return;
+    if (GOOGLE_SCRIPT_URL === 'https://script.google.com/macros/s/AKfycbzzdVO-Ys5wIE1JkjujKyXOUh6Rs0eOnhTsrFJKDa6_y0VZcU7l2DjXdOv63LxjRsa7/exec') return;
 
     document.getElementById('submitText').classList.add('hidden');
     document.getElementById('submitIcon').classList.add('hidden');
